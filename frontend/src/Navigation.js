@@ -31,6 +31,8 @@ function Navigation() {
         )
     }
 
+    console.log(currentUser)
+
     return (
         <nav>
             <ul>
