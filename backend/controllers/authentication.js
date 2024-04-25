@@ -1,4 +1,5 @@
 const router = require('express').Router()
+const { where } = require('sequelize')
 const db = require("../models")
 const bcrypt = require('bcrypt')
 
@@ -14,7 +15,22 @@ router.post('/', async (req, res) => {
             message: `Could not find a user with provided email ${req.body.email} and password`
         })
     }else {
+        req.session.userId = user.userId
         res.json(user)
+    }
+})
+
+router.get('/profile', async (req, res) => {
+    // console.log(req.session.userId)
+    try {
+        let user = await User.findOne({
+            where: {
+                userId:req.session.userId
+            }
+        })
+        res.json(user)
+    } catch (error) {
+        res.json(error)
     }
 })
 
