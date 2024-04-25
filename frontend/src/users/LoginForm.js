@@ -17,7 +17,8 @@ function LoginForm() {
 
       
 async function handleSubmit(e) {
-    e.preventDefault()
+  e.preventDefault()
+  try{
     const response = await fetch(`http://localhost:5000/authentication/`, {
         method: 'POST',
         headers: {
@@ -29,11 +30,18 @@ async function handleSubmit(e) {
     const data = await response.json()
     
     if (response.status === 200) {
-        setCurrentUser(data)
+        setCurrentUser(data.user)
+        //Save the JWT in localStorage
+        localStorage.setItem('token', data.token)
+        // console.log(`Your token is ${data.token}`)
         history.push('/')
     } else {
         setErrorMessage(data.message)
     }
+  }catch(err){
+    console.error('An error occurred:', err);
+    setErrorMessage('An error occurred. Please try again later.')
+  }
 }
 
     return (
