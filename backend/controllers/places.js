@@ -4,6 +4,10 @@ const db = require("../models")
 const { Place, Comment, User } = db
 
 router.post('/', async (req, res) => {
+    if(req.currentUser?.role != 'admin') {
+        return res.status(403).json({message:"You are not allowed to add places"})
+    }
+    
     if (!req.body.pic) {
         req.body.pic = 'http://placekitten.com/400/400'
     }
@@ -45,6 +49,10 @@ router.get('/:placeId', async (req, res) => {
 })
 
 router.put('/:placeId', async (req, res) => {
+    if(req.currentUser?.role != 'admin') {
+        return res.status(403).json({message:"You are not allowed to edit places"})
+    }
+
     let placeId = Number(req.params.placeId)
     if (isNaN(placeId)) {
         res.status(404).json({ message: `Invalid id "${placeId}"` })
@@ -63,6 +71,9 @@ router.put('/:placeId', async (req, res) => {
 })
 
 router.delete('/:placeId', async (req, res) => {
+    if(req.currentUser?.role != 'admin') {
+        return res.status(403).json({message:"You are not allowed to delete places"})
+    }
     let placeId = Number(req.params.placeId)
     if (isNaN(placeId)) {
         res.status(404).json({ message: `Invalid id "${placeId}"` })
@@ -93,23 +104,56 @@ router.post('/:placeId/comments', async (req, res) => {
     if (!place) {
         res.status(404).json({ message: `Could not find place with id "${placeId}"` })
     }
+    
+    let currentUser;
+    try {
+        // Split the authorization header into [ "Bearer", "TOKEN" ]:
+        const [authenticationMethod, token] = req.headers.authorization.split(' ')
 
-    const author = await User.findOne({
-        where: { userId: req.body.authorId }
-    })
+        // Only handle "Bearer" authorization for now 
+        //  (we could add other authorization strategies later):
+        if (authenticationMethod == 'Bearer') {
 
-    if (!author) {
-        res.status(404).json({ message: `Could not find author with id "${req.body.authorId}"` })
+            // Decode the JWT
+            const result = await jwt.decode(process.env.JWT_SECRET, token)
+
+            // Get the logged in user's id from the payload
+            const { id } = result.value
+
+            // Find the user object using their id:
+            currentUser = await User.findOne({
+                where: {
+                    userId: id
+                }
+            })
+
+            if (!currentUser) {
+                return res.status(404).json({ message: `You must be logged in to leave a rant or rave` })
+            }
+            
+            res.json(currentUser)
+        }
+    } catch {
+        res.json(null)
     }
+
+    // const author = await User.findOne({
+    //     where: { userId: req.body.authorId }
+    // })
+
+    // if (!author) {
+    //     res.status(404).json({ message: `Could not find author with id "${req.body.authorId}"` })
+    // }
 
     const comment = await Comment.create({
         ...req.body,
+        authorId: currentUser.userId,
         placeId: placeId
     })
 
     res.send({
         ...comment.toJSON(),
-        author
+        author:currentUser
     })
 })
 

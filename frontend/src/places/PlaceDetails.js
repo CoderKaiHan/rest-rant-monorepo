@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useHistory, useParams } from "react-router"
 import CommentCard from './CommentCard'
 import NewCommentForm from "./NewCommentForm";
+import { CurrentUser } from '../contexts/CurrentUser';
 
 function PlaceDetails() {
+	const { currentUser } = useContext(CurrentUser)
 
 	const { placeId } = useParams()
 
@@ -51,6 +53,7 @@ function PlaceDetails() {
 		const response = await fetch(`http://localhost:5000/places/${place.placeId}/comments`, {
 			method: 'POST',
 			headers: {
+				'Authorization': `Bearer ${localStorage.getItem('token')}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(commentAttributes)
@@ -80,7 +83,7 @@ function PlaceDetails() {
 			Not yet rated
 		</h3>
 	)
-	if (place.comments.length) {
+	if (place.comments && place.comments.length) {
 		let sumRatings = place.comments.reduce((tot, c) => {
 			return tot + c.stars
 		}, 0)
@@ -100,7 +103,15 @@ function PlaceDetails() {
 			)
 		})
 	}
-
+    
+	let placeActions = null
+	if(currentUser?.role === 'admin') {
+		placeActions = (
+			<>
+				<a className="btn btn-danger" onClick={deletePlace}>Delete</a>
+				<a className="btn btn-warning" onClick={editPlace}>Edit</a>
+			</>
+		)}
 
 	return (
 		<main>
@@ -128,12 +139,13 @@ function PlaceDetails() {
 						Serving {place.cuisines}.
 					</h4>
 					<br />
-					<a className="btn btn-warning" onClick={editPlace}>
+					{placeActions}
+					{/* <a className="btn btn-warning" onClick={editPlace}>
 						Edit
-					</a>{` `}
-					<button type="submit" className="btn btn-danger" onClick={deletePlace}>
+					</a>{` `} */}
+					{/* <button type="submit" className="btn btn-danger" onClick={deletePlace}>
 						Delete
-					</button>
+					</button> */}
 				</div>
 			</div>
 			<hr />

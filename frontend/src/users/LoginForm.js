@@ -33,7 +33,7 @@ async function handleSubmit(e) {
         setCurrentUser(data.user)
         //Save the JWT in localStorage
         localStorage.setItem('token', data.token)
-        // console.log(`Your token is ${data.token}`)
+        console.log(`Your token is ${data.token}`)
         history.push('/')
     } else {
         setErrorMessage(data.message)
